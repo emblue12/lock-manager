@@ -96,7 +96,6 @@ def installed() {
 			response(["delay 2000"] + secureSequence([zwave.doorLockV1.doorLockOperationGet(), zwave.batteryV1.batteryGet()], 2200))
 		}
 	} catch (e) {
-		log.warn "installed() threw $e"
 	}
 }
 
@@ -127,13 +126,11 @@ def parse(String description) {
 			result = zwaveEvent(cmd)
 		}
 	}
-	log.debug "\"$description\" parsed to ${result.inspect()}"
 	result
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {
 	def encapsulatedCommand = cmd.encapsulatedCommand([0x62: 1, 0x71: 2, 0x80: 1, 0x85: 2, 0x63: 1, 0x98: 1, 0x86: 1])
-	// log.debug "encapsulated: $encapsulatedCommand"
 	if (encapsulatedCommand) {
 		zwaveEvent(encapsulatedCommand)
 	}
@@ -148,7 +145,6 @@ def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityCommandsSupported
 	if (cmd.commandClassControl) {
 		state.secCon = cmd.commandClassControl.collect { String.format("%02X ", it) }.join()
 	}
-	log.debug "Security command classes: $state.sec"
 	createEvent(name:"secureInclusion", value:"success", descriptionText:"Lock is securely included")
 }
 
@@ -168,7 +164,6 @@ def zwaveEvent(DoorLockOperationReport cmd) {
 	} else {
 		map.value = "unlocked"
 		if (state.assoc != zwaveHubNodeId) {
-			log.debug "setting association"
 			result << response(secure(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:zwaveHubNodeId)))
 			result << response(zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:zwaveHubNodeId))
 			result << response(secure(zwave.associationV1.associationGet(groupingIdentifier:1)))
@@ -421,7 +416,6 @@ def zwaveEvent(UserCodeReport cmd) {
 			state.pollCode = state.pollCode + 1
 		}
 	}
-	log.debug "code report parsed to ${result.inspect()}"
 	result
 }
 
@@ -438,7 +432,6 @@ def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd)
 	def result = []
 	if (cmd.nodeId.any { it == zwaveHubNodeId }) {
 		state.remove("associationQuery")
-		log.debug "$device.displayName is associated to $zwaveHubNodeId"
 		result << createEvent(descriptionText: "$device.displayName is associated")
 		state.assoc = zwaveHubNodeId
 		if (cmd.groupingIdentifier == 2) {
@@ -492,7 +485,6 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
 	def result = []
 
 	def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
-	log.debug "msr: $msr"
 	updateDataValue("MSR", msr)
 
 	result << createEvent(descriptionText: "$device.displayName MSR: $msr", isStateChange: false)
@@ -560,9 +552,7 @@ def stateCheck() {
 def refresh() {
 	def cmds = [secure(zwave.doorLockV1.doorLockOperationGet()), secure(zwave.batteryV1.batteryGet())]
 	if (state.assoc == zwaveHubNodeId) {
-		log.debug "$device.displayName is associated to ${state.assoc}"
 	} else if (!state.associationQuery) {
-		log.debug "checking association"
 		cmds << "delay 4200"
 		cmds << zwave.associationV1.associationGet(groupingIdentifier:2).format()  // old Schlage locks use group 2 and don't secure the Association CC
 		cmds << secure(zwave.associationV1.associationGet(groupingIdentifier:1))
@@ -575,7 +565,6 @@ def refresh() {
 		cmds << secure(zwave.associationV1.associationGet(groupingIdentifier:1))
 		state.associationQuery = now()
 	}
-	log.debug "refresh sending ${cmds.inspect()}"
 	cmds
 }
 
@@ -591,7 +580,6 @@ def poll() {
 		state.lastbatt = now()  //inside-214
 	}
 	if (cmds) {
-		log.debug "poll is sending ${cmds.inspect()}"
 		cmds
 	} else {
 		// workaround to keep polling from stopping due to lack of activity
@@ -619,7 +607,6 @@ def reloadAllCodes() {
 
 def setCode(codeNumber, code) {
 	def strcode = code
-	log.debug "setting code $codeNumber to $code"
 	if (code instanceof String) {
 		code = code.toList().findResults { if(it > ' ' && it != ',' && it != '-') it.toCharacter() as Short }
 	} else {
@@ -643,7 +630,6 @@ def setCode(codeNumber, code) {
 }
 
 def deleteCode(codeNumber) {
-	log.debug "deleting code $codeNumber"
 	secureSequence([
 		zwave.userCodeV1.userCodeSet(userIdentifier:codeNumber, userIdStatus:0),
 		zwave.userCodeV1.userCodeGet(userIdentifier:codeNumber)
@@ -658,7 +644,6 @@ def updateCodes(codeSettings) {
 		def current = decrypt(state[name])
 		if (name.startsWith("code")) {
 			def n = name[4..-1].toInteger()
-			log.debug "$name was $current, set to $updated"
 			if (updated?.size() >= 4 && updated != current) {
 				def cmds = setCode(n, updated)
 				set_cmds << cmds.first()
@@ -671,7 +656,8 @@ def updateCodes(codeSettings) {
 				// Entered code was too short
 				codeSettings["code$n"] = current
 			}
-		} else log.warn("unexpected entry $name: $updated")
+		} else {
+		}
 	}
 	if (set_cmds) {
 		return response(delayBetween(set_cmds, 2200) + ["delay 2200"] + delayBetween(get_cmds, 4200))

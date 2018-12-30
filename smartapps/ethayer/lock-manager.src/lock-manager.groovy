@@ -250,19 +250,16 @@ def notificationPageDescription() {
 }
 
 def installed() {
-  log.debug "Installed with settings: ${settings}"
   initialize()
 }
 
 def updated() {
-  log.debug "Updated with settings: ${settings}"
   unsubscribe()
   initialize()
 }
 
 def initialize() {
   def children = getChildApps()
-  log.debug "there are ${children.size()} lock users"
 }
 
 def getLockAppByIndex(params) {
@@ -320,10 +317,8 @@ def keypadMatchingUser(usedCode){
   def userApps = getUserApps()
   userApps.each { userApp ->
     def code
-    log.debug userApp.userCode
     if (userApp.isActiveKeypad()) {
       code = userApp.userCode.take(4)
-      log.debug "code: ${code} used: ${usedCode}"
       if (code.toInteger() == usedCode.toInteger()) {
         correctUser = userApp
       }
@@ -389,10 +384,6 @@ def debuggerOn() {
 }
 
 def debugger(message) {
-  def doDebugger = debuggerOn()
-  if (enableDebug) {
-    return log.debug(message)
-  }
 }
 
 def anyoneHome(sensors) {

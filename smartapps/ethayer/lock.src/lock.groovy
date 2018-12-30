@@ -481,7 +481,6 @@ def codeUsed(evt) {
 }
 
 def setCodes() {
-  debugger('run code logic')
   def codes = state.codes
   def sortedCodes = codes.sort{it.value.slot}
   sortedCodes.each { data ->
@@ -596,7 +595,6 @@ def doorOpenCheck() {
   def currentState = contact.contactState
   if (currentState?.value == 'open') {
     def msg = "${contact.displayName} is open.  Scheduled lock failed."
-    log.info msg
     if (sendPushMessage) {
       sendPush msg
     }
@@ -610,8 +608,6 @@ def doorOpenCheck() {
 }
 
 def lockMessage() {
-  def msg = "Locking ${lock.displayName} due to scheduled lock."
-  log.info msg
 }
 
 
@@ -715,10 +711,6 @@ def pinLength() {
 }
 
 def debugger(message) {
-  def doDebugger = parent.debuggerOn()
-  if (doDebugger) {
-    log.debug(message)
-  }
 }
 
 def anyoneHome(sensors) {

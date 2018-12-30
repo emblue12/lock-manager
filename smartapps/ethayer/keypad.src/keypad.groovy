@@ -175,7 +175,6 @@ def armCommand(value, correctUser, enteredCode) {
       action = 'armed to \'Away\''
       break
     default:
-      log.error "${app.label}: Unexpected arm mode sent by keypad!"
       armMode = false
       break
   }
@@ -268,8 +267,4 @@ def sendSHMEvent(armMode) {
 }
 
 def debugger(message) {
-  def doDebugger = parent.debuggerOn()
-  if (doDebugger) {
-    log.debug(message)
-  }
 }

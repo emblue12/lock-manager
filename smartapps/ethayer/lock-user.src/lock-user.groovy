@@ -28,12 +28,10 @@ preferences {
 }
 
 def installed() {
-  log.debug "Installed with settings: ${settings}"
   initialize()
 }
 
 def updated() {
-  log.debug "Updated with settings: ${settings}"
   initialize()
 }
 
@@ -61,22 +59,18 @@ def uninstalled() {
 def subscribeToSchedule() {
   if (startTime) {
     // sechedule time of start!
-    log.debug 'scheduling time start'
     schedule(startTime, 'scheduledStartTime')
   }
   if (endTime) {
     // sechedule time of end!
-    log.debug 'scheduling time end'
     schedule(endTime, 'scheduledEndTime')
   }
   if (startDateTime()) {
     // schedule calendar start!
-    log.debug 'scheduling calendar start'
     runOnce(startDateTime().format(smartThingsDateFormat(), timeZone()), 'calendarStart')
   }
   if (endDateTime()) {
     // schedule calendar end!
-    log.debug 'scheduling calendar end'
     runOnce(endDateTime().format(smartThingsDateFormat(), timeZone()), 'calendarEnd')
   }
 }
@@ -233,7 +227,6 @@ def lockPage(params) {
     debugger('current params: ' + params)
     def lock = getLock(params)
     def lockApp = getLockApp(lock.id)
-    log.debug lockApp
     def slotData = lockApp.slotData(userSlot)
 
     def usage = state."lock${lock.id}".usage
@@ -1003,8 +996,4 @@ def executeHelloPresenceCheck(routines) {
 }
 
 def debugger(message) {
-  def doDebugger = parent.debuggerOn()
-  if (doDebugger) {
-    log.debug(message)
-  }
 }

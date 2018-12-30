@@ -227,14 +227,12 @@ def parse(String description)
 			result = zwaveEvent(cmd)
 		}
 	}
-	log.debug "\"$description\" parsed to ${result.inspect()}"
 	result
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd)
 {
 	def encapsulatedCommand = cmd.encapsulatedCommand([0x62: 1, 0x71: 2, 0x80: 1, 0x85: 2, 0x63: 1, 0x98: 1, 0x86: 1])
-	// log.debug "encapsulated: $encapsulatedCommand"
 	if (encapsulatedCommand)
     {
 		zwaveEvent(encapsulatedCommand)
@@ -252,7 +250,6 @@ def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityCommandsSupported
     {
 		state.secCon = cmd.commandClassControl.collect { String.format("%02X ", it) }.join()
 	}
-	log.debug "Security command classes: $state.sec"
 	createEvent(name:"secureInclusion", value:"success", descriptionText:"Lock is securely included")
 }
 
@@ -277,7 +274,6 @@ def zwaveEvent(DoorLockOperationReport cmd)
 		map.value = "unlocked"
 		if (state.assoc != zwaveHubNodeId)
         {
-			log.debug "setting association"
 			result << response(secure(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:zwaveHubNodeId)))
 			result << response(zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:zwaveHubNodeId))
 			result << response(secure(zwave.associationV1.associationGet(groupingIdentifier:1)))
@@ -583,7 +579,6 @@ def zwaveEvent(UserCodeReport cmd)
 			state.pollCode = state.pollCode + 1
 		}
 	}
-	log.debug "code report parsed to ${result.inspect()}"
 	result
 }
 
@@ -603,7 +598,6 @@ def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd)
 	if (cmd.nodeId.any { it == zwaveHubNodeId })
     {
 		state.remove("associationQuery")
-		log.debug "$device.displayName is associated to $zwaveHubNodeId"
 		result << createEvent(descriptionText: "$device.displayName is associated")
 		state.assoc = zwaveHubNodeId
 		if (cmd.groupingIdentifier == 2)
@@ -669,7 +663,6 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
 	def result = []
 
 	def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
-	log.debug "msr: $msr"
 	updateDataValue("MSR", msr)
 
 	result << createEvent(descriptionText: "$device.displayName MSR: $msr", isStateChange: false)
@@ -790,7 +783,6 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 			}
 			else
 			{
-				log.debug "got sensitivity for $whichMode while in $curAlarmMode"
 				map.isStateChange = true
 			}
 
@@ -932,22 +924,18 @@ def refresh() {
 	// go ahead and fill in any missing values
 	if (null == device.latestValue("pinLength"))
     {
-    	log.debug "getting pin length"
     	cmds << "delay 6000"
         cmds << secure(zwave.configurationV2.configurationGet(parameterNumber: 0x10))
     }
 
 
 	if (state.assoc == zwaveHubNodeId) {
-		log.debug "$device.displayName is associated to ${state.assoc}"
 	} else if (!state.associationQuery) {
-		log.debug "checking association"
 		cmds << "delay 4200"
 		cmds << zwave.associationV1.associationGet(groupingIdentifier:2).format()  // old Schlage locks use group 2 and don't secure the Association CC
 		cmds << secure(zwave.associationV1.associationGet(groupingIdentifier:1))
 		state.associationQuery = new Date().time
 	} else if (new Date().time - state.associationQuery.toLong() > 9000) {
-		log.debug "setting association"
 		cmds << "delay 6000"
 		cmds << zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:zwaveHubNodeId).format()
 		cmds << secure(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:zwaveHubNodeId))
@@ -955,7 +943,6 @@ def refresh() {
 		cmds << secure(zwave.associationV1.associationGet(groupingIdentifier:1))
 		state.associationQuery = new Date().time
 	}
-	log.debug "refresh is sending ${cmds.inspect()}, state: ${state.inspect()}"
 	cmds
 }
 
@@ -964,7 +951,6 @@ def poll() {
     state.pinLength = null;
 	if (state.assoc != zwaveHubNodeId && secondsPast(state.associationQuery, 19 * 60))
     {
-		log.debug "setting association"
 		cmds << zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:zwaveHubNodeId).format()
 		cmds << secure(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:zwaveHubNodeId))
 		cmds << zwave.associationV1.associationGet(groupingIdentifier:2).format()
@@ -1018,7 +1004,6 @@ def poll() {
 	}
     reportAllCodes(state)
 
-	log.debug "poll is sending ${cmds.inspect()}"
 	device.activity()
 	cmds ?: null
 }
@@ -1037,7 +1022,6 @@ private def encryptCodes()
 			}
             else if (state[key] && !state[key].startsWith("~"))
 			{
-				log.debug "encrypting $key: ${state[key].inspect()}"
 				state[key] = encrypt(state[key])
 			}
 		}
@@ -1047,7 +1031,6 @@ private def encryptCodes()
 
 def requestCode(codeNumber)
 {
-	log.debug "getting user code $codeNumber"
 	secure(zwave.userCodeV1.userCodeGet(userIdentifier: codeNumber))
 }
 
@@ -1070,7 +1053,6 @@ def reloadAllCodes()
 def setCode(codeNumber, code)
 {
 	def strcode = code
-	log.debug "setting code $codeNumber to $code"
 	if (code instanceof String)
     {
 		code = code.toList().findResults { if(it > ' ' && it != ',' && it != '-') it.toCharacter() as Short }
@@ -1103,7 +1085,6 @@ def setCode(codeNumber, code)
 
 def deleteCode(codeNumber)
 {
-	log.debug "deleting code $codeNumber"
 	secureSequence([
 		zwave.userCodeV1.userCodeSet(userIdentifier:codeNumber, userIdStatus:0),
 		zwave.userCodeV1.userCodeGet(userIdentifier:codeNumber)
@@ -1112,7 +1093,6 @@ def deleteCode(codeNumber)
 
 def updateCodes(codeSettings)
 {
-log.debug "updateCodes called with: ${codeSettings.inspect()}"
 	if(codeSettings instanceof String) codeSettings = util.parseJson(codeSettings)
 	def set_cmds = []
 	def get_cmds = []
@@ -1123,31 +1103,27 @@ log.debug "updateCodes called with: ${codeSettings.inspect()}"
 			def n = name[4..-1].toInteger()
 			if (updated?.size() >= 4 && updated != current)
             {
-				log.debug "$name was $current, set to $updated"
 				def cmds = setCode(n, updated)
 				set_cmds << cmds.first()
 				get_cmds << cmds.last()
 			}
             else if ((current && updated == "") || updated == "0")
             {
-				log.debug "$name was $current, set to deleted"
 				def cmds = deleteCode(n)
 				set_cmds << cmds.first()
 				get_cmds << cmds.last()
 			}
             else if (updated && updated.size() < 4)
             {
-				log.debug "Attempt to set $name to a value that's too short"
 				// Entered code was too short
 				codeSettings["code$n"] = current
 			}
             else
             {
-            	log.debug "$name remains unchanged."
             }
 		}
-        else
-        	log.warn("unexpected entry $name: $updated")
+        else {
+        }
 	}
 	if (set_cmds)
     {
@@ -1238,8 +1214,6 @@ def setOnOffParameter(paramName, paramNumber)
 		cmds = secureSequence([zwave.configurationV2.configurationGet(parameterNumber: paramNumber)], 5000)
 	}
 
-	log.debug "set $paramName sending ${cmds.inspect()}"
-
 	cmds
 }
 
@@ -1328,7 +1302,6 @@ def setAlarmMode(def newValue = null)
 		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: 7, size: 1, configurationValue: [newMode])],5000)
 	}
 
-	log.debug "setAlarmMode sending ${cmds.inspect()}"
 	cmds
 }
 
@@ -1349,7 +1322,6 @@ def setPinLength(newValue)
 	{
 		sendEvent(descriptionText: "$device.displayName UNABLE to set PIN length of $newValue", displayed: true, isStateChange: true)
 	}
-	log.debug "setPinLength sending ${cmds.inspect()}"
 	cmds
 }
 
@@ -1392,7 +1364,6 @@ def setAlarmSensitivity(newValue)
 			sendEvent(name: 'alarmSensitivity', value: 0, displayed: false )
 			// then add the actual attribute set call
 			cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: paramToSet, size: 1, configurationValue: [newValue])],5000)
-			log.debug "setAlarmSensitivity sending ${cmds.inspect()}"
 		}
 	}
 	cmds
