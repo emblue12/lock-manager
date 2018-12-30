@@ -208,17 +208,17 @@ def userCodeInputTitle() {
 
 def lockPageImage(lock) {
   if (!state."lock${lock.id}".enabled || settings."lockDisabled${lock.id}") {
-    return 'https://images.lockmanager.io/app/v1/images/ban.png'
+    return ''
   } else {
-    return 'https://images.lockmanager.io/app/v1/images/lock.png'
+    return ''
   }
 }
 
 def lockInfoPageImage(lock) {
   if (!state."lock${lock.id}".enabled || settings."lockDisabled${lock.id}") {
-    return 'https://images.lockmanager.io/app/v1/images/user-times.png'
+    return ''
   } else {
-    return 'https://images.lockmanager.io/app/v1/images/user.png'
+    return ''
   }
 }
 
@@ -376,10 +376,10 @@ def notificationPage() {
           input(name: 'notification', type: 'bool', title: 'Send A Push Notification', description: 'Notification', required: false, submitOnChange: true)
         }
         if (phone != null || notification || recipients) {
-          input(name: 'notifyAccess', title: 'on User Entry', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/unlock-alt.png')
-          input(name: 'notifyLock', title: 'on Lock', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/lock.png')
-          input(name: 'notifyAccessStart', title: 'when granting access', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/check-circle-o.png')
-          input(name: 'notifyAccessEnd', title: 'when revoking access', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/times-circle-o.png')
+          input(name: 'notifyAccess', title: 'on User Entry', type: 'bool', required: false)
+          input(name: 'notifyLock', title: 'on Lock', type: 'bool', required: false)
+          input(name: 'notifyAccessStart', title: 'when granting access', type: 'bool', required: false)
+          input(name: 'notifyAccessEnd', title: 'when revoking access', type: 'bool', required: false)
         }
       }
     }
@@ -395,10 +395,10 @@ def notificationPage() {
 def askAlexaPage() {
   dynamicPage(name: 'askAlexaPage', title: 'Ask Alexa Message Settings') {
     section('Que Messages with the Ask Alexa app') {
-      input(name: 'alexaAccess', title: 'on User Entry', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/unlock-alt.png')
-      input(name: 'alexaLock', title: 'on Lock', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/lock.png')
-      input(name: 'alexaAccessStart', title: 'when granting access', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/check-circle-o.png')
-      input(name: 'alexaAccessEnd', title: 'when revoking access', type: 'bool', required: false, image: 'https://images.lockmanager.io/app/v1/images/times-circle-o.png')
+      input(name: 'alexaAccess', title: 'on User Entry', type: 'bool', required: false)
+      input(name: 'alexaLock', title: 'on Lock', type: 'bool', required: false)
+      input(name: 'alexaAccessStart', title: 'when granting access', type: 'bool', required: false)
+      input(name: 'alexaAccessEnd', title: 'when revoking access', type: 'bool', required: false)
     }
     section('Only During These Times (optional)') {
       input(name: 'alexaStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)

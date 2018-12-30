@@ -176,7 +176,7 @@ def helloHomePage() {
       input(name: 'manualUnlockRoutine', title: 'On Manual Unlock', type: 'enum', options: actions, required: false, multiple: true)
       input(name: 'manualLockRoutine', title: 'On Manual Lock', type: 'enum', options: actions, required: false, multiple: true)
 
-      input(name: 'codeUnlockRoutine', title: 'On Code Unlock', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeUnlockRoutine', title: 'On Code Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
 
       paragraph 'Supported on some locks:'
       input(name: 'codeLockRoutine', title: 'On Code Lock', type: 'enum', options: actions, required: false, multiple: true)
@@ -345,6 +345,22 @@ def pollCodeReport(evt) {
   setCodes()
 }
 
+def timeZone() {
+  def zone
+  if(location.timeZone) {
+    zone = location.timeZone
+  } else {
+    zone = TimeZone.getDefault()
+  }
+  return zone
+}
+
+def rightNow() {
+  def now = new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ", timeZone())
+  return Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", now)
+}
+
+
 def codeUsed(evt) {
   def lockId = lock.id
   def message = ''
@@ -380,7 +396,11 @@ def codeUsed(evt) {
       }
       // lock specific
       if (codeUnlockRoutine) {
-        executeHelloPresenceCheck(codeUnlockRoutine)
+        def sunriseSunset = getSunriseAndSunset()
+        def now = rightNow()
+        if (now > sunriseSunset.sunset && now < sunriseSunset.sunrise) {
+          executeHelloPresenceCheck(codeUnlockRoutine)
+        }
       }
       // global
       if (parent.codeUnlockRoutine) {
