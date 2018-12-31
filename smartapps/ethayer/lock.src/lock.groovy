@@ -379,13 +379,10 @@ def codeUsed(evt) {
   if (!data || data?.usedCode == 'manual') {
     manualUse = true
   }
-  
-  log.debug('HELLO')
 
   if (action == 'unlocked') {
     // door was unlocked
     if (userApp) {
-    log.debug('A')
       message = "${lock.label} was unlocked by ${userApp.userName}"
       userApp.incrementLockUsage(lock.id)
       if (!userApp.isNotBurned()) {
@@ -397,7 +394,6 @@ def codeUsed(evt) {
         userApp.executeHelloPresenceCheck(userApp.userUnlockPhrase)
       }
     } else if (manualUse) {
-    log.debug('B')
       // unlocked manually
 
       // lock specific
@@ -417,23 +413,16 @@ def codeUsed(evt) {
         send(message)
       }
     }
-    log.debug('C')
     // lock specific
-    if (now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise) {
-    log.debug('D')
+    if (now >= sunriseSunset.sunset && now <= (sunriseSunset.sunrise + 1)) {
       if (codeUnlockRoutine) {
-      log.debug('E')
         executeHelloPresenceCheck(codeUnlockRoutine)
       }
       // global
       if (parent.codeUnlockRoutine) {
-      log.debug('F')
         parent.executeHelloPresenceCheck(parent.codeUnlockRoutine)
       }
     }
-    log.debug('G')
-    log.debug("${now} >= ${sunriseSunset.sunset} && ${now <= sunriseSunset.sunrise}: ${now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise}")
-    log.debug('H')
   }
   if (action == 'locked') {
     // door was locked
