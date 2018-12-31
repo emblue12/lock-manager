@@ -152,7 +152,7 @@ def helloHomePage() {
       input(name: 'manualUnlockRoutine', title: 'On Manual Unlock', type: 'enum', options: actions, required: false, multiple: true)
       input(name: 'manualLockRoutine', title: 'On Manual Lock', type: 'enum', options: actions, required: false, multiple: true)
 
-      input(name: 'codeUnlockRoutine', title: 'On Code Unlock', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeUnlockRoutine', title: 'On Code Unlock After Sunset', type: 'enum', options: actions, required: false, multiple: true)
 
       paragraph 'Supported on some locks:'
       input(name: 'codeLockRoutine', title: 'On Code Lock', type: 'enum', options: actions, required: false, multiple: true)
