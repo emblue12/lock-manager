@@ -377,10 +377,10 @@ def codeUsed(evt) {
   }
 
   message = "${sunriseSunset.sunset} < ${now}: ${now > sunriseSunset.sunset}"
-  log message
+  send(message)
   
   message = "${sunriseSunset.sunrise} > ${now}: ${now > sunriseSunset.sunrise}"
-  log message
+  send(message)
   
   if (!data || data?.usedCode == 'manual') {
     manualUse = true
