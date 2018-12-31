@@ -396,7 +396,7 @@ def codeUsed(evt) {
         userApp.executeHelloPresenceCheck(userApp.userUnlockPhrase)
       }
       // lock specific
-      log.debug("${now} >= ${sunriseSunset.sunset} && ${now <= sunriseSunset.sunrise}: ${now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise})
+      log.debug("${now} >= ${sunriseSunset.sunset} && ${now <= sunriseSunset.sunrise}: ${now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise}")
       if (now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise) {
         if (codeUnlockRoutine) {
           executeHelloPresenceCheck(codeUnlockRoutine)
