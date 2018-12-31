@@ -178,9 +178,6 @@ def helloHomePage() {
 
       input(name: 'codeUnlockRoutine', title: 'On Code Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
 
-      paragraph 'Supported on some locks:'
-      input(name: 'codeLockRoutine', title: 'On Code Lock', type: 'enum', options: actions, required: false, multiple: true)
-
       paragraph 'These restrictions apply to all the above:'
       input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
       input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
@@ -369,6 +366,8 @@ def codeUsed(evt) {
   def codeUsed = false
   def manualUse = false
   def data = false
+  def sunriseSunset = getSunriseAndSunset()
+  def now = rightNow()
   if (evt.data) {
     data = new JsonSlurper().parseText(evt.data)
     codeUsed = data.usedCode
@@ -377,6 +376,12 @@ def codeUsed(evt) {
     }
   }
 
+  message = "${sunriseSunset.sunset} < ${now}: ${now > sunriseSunset.sunset}"
+  send(message)
+  
+  message = "${sunriseSunset.sunrise} > ${now}: ${now > sunriseSunset.sunrise}"
+  send(message)
+  
   if (!data || data?.usedCode == 'manual') {
     manualUse = true
   }
@@ -396,8 +401,6 @@ def codeUsed(evt) {
       }
       // lock specific
       if (codeUnlockRoutine) {
-        def sunriseSunset = getSunriseAndSunset()
-        def now = rightNow()
         if (now > sunriseSunset.sunset && now < sunriseSunset.sunrise) {
           executeHelloPresenceCheck(codeUnlockRoutine)
         }
