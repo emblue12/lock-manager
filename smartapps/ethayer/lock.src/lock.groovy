@@ -379,6 +379,8 @@ def codeUsed(evt) {
   if (!data || data?.usedCode == 'manual') {
     manualUse = true
   }
+  
+  log.debug('HELLO')
 
   if (action == 'unlocked') {
     // door was unlocked
@@ -394,6 +396,7 @@ def codeUsed(evt) {
         userApp.executeHelloPresenceCheck(userApp.userUnlockPhrase)
       }
       // lock specific
+      log.debug("${now} >= ${sunriseSunset.sunset} && ${now <= sunriseSunset.sunrise}: ${now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise})
       if (now >= sunriseSunset.sunset && now <= sunriseSunset.sunrise) {
         if (codeUnlockRoutine) {
           executeHelloPresenceCheck(codeUnlockRoutine)
