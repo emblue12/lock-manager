@@ -26,7 +26,6 @@ def mainPage() {
     section('Create') {
       app(name: 'locks', appName: 'Lock', namespace: 'ethayer', title: 'New Lock', multiple: true)
       app(name: 'lockUsers', appName: 'Lock User', namespace: 'ethayer', title: 'New User', multiple: true)
-      app(name: 'keypads', appName: 'Keypad', namespace: 'ethayer', title: 'New Keypad', multiple: true)
     }
     section('Locks') {
       def lockApps = getLockApps()
@@ -41,22 +40,10 @@ def mainPage() {
     }
     section('Global Settings') {
       href(name: 'toNotificationPage', page: 'notificationPage', title: 'Notification Settings', description: notificationPageDescription(), state: notificationPageDescription() ? 'complete' : '')
-
-      def actions = location.helloHome?.getPhrases()*.label
-      if (actions) {
-        href(name: 'toHelloHomePage', page: 'helloHomePage', title: 'Hello Home Settings')
-      }
-
-      def keypadApps = getKeypadApps()
-      if (keypadApps) {
-        href(name: 'toKeypadPage', page: 'keypadPage', title: 'Keypad Routines (optional)')
-      }
     }
     section('Advanced', hideable: true, hidden: true) {
       input(name: 'overwriteMode', title: 'Overwrite?', type: 'bool', required: true, defaultValue: true, description: 'Overwrite mode automatically deletes codes not in the users list')
-      input(name: 'enableDebug', title: 'Enable IDE debug messages?', type: 'bool', required: true, defaultValue: false, description: 'Show activity from Lock Manger in logs for debugging.')
       label(title: 'Label this SmartApp', required: false, defaultValue: 'Lock Manager')
-      paragraph 'Lock Manager © 2017 v1.4'
     }
   }
 }

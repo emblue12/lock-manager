@@ -393,6 +393,17 @@ def codeUsed(evt) {
       if (userApp.userUnlockPhrase) {
         userApp.executeHelloPresenceCheck(userApp.userUnlockPhrase)
       }
+      
+      // lock specific
+      if (now >= sunriseSunset.sunset && now <= (sunriseSunset.sunrise + 1)) {
+        if (codeUnlockRoutine) {
+          executeHelloPresenceCheck(codeUnlockRoutine)
+        }
+        // global
+        if (parent.codeUnlockRoutine) {
+          parent.executeHelloPresenceCheck(parent.codeUnlockRoutine)
+        }
+      }
     } else if (manualUse) {
       // unlocked manually
 
@@ -411,16 +422,6 @@ def codeUsed(evt) {
       }
       if (alexaManualUnlock) {
         send(message)
-      }
-    }
-    // lock specific
-    if (now >= sunriseSunset.sunset && now <= (sunriseSunset.sunrise + 1)) {
-      if (codeUnlockRoutine) {
-        executeHelloPresenceCheck(codeUnlockRoutine)
-      }
-      // global
-      if (parent.codeUnlockRoutine) {
-        parent.executeHelloPresenceCheck(parent.codeUnlockRoutine)
       }
     }
   }
