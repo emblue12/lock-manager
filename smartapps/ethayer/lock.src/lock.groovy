@@ -373,6 +373,7 @@ def codeUsed(evt) {
     manualUse = true
   }
 
+  log.debug("action: ${action}, user: ${userApp}, evening: ${isEvening}, manual: ${manualUse}, keylock: ${data && data.usedCode == -1}")
   if (action == 'unlocked') {
     // door was unlocked
     if (userApp) {
@@ -699,6 +700,7 @@ def anyoneHome(sensors) {
 }
 
 def executeHelloPresenceCheck(routines) {
+  log.debug("Running hello ${routines}")
   if (userNoRunPresence && userDoRunPresence == null) {
     if (!anyoneHome(userNoRunPresence)) {
       location.helloHome.execute(routines)
