@@ -94,7 +94,6 @@ def mainPage() {
       input(name: 'lock', title: 'Which Lock?', type: 'capability.lock', multiple: false, required: true)
       input(name: 'contactSensor', title: 'Which contact sensor?', type: "capability.contactSensor", multiple: false, required: false)
       input(name: 'slotCount', title: 'How many slots?', type: 'number', multiple: false, required: false, description: 'Overwrite number of slots supported.')
-      paragraph 'Lock Manager © 2017 v1.4'
     }
   }
 }
@@ -154,19 +153,17 @@ def helloHomePage() {
   dynamicPage(name: 'helloHomePage', title: 'Hello Home Settings (optional)') {
     def actions = location.helloHome?.getPhrases()*.label
     actions?.sort()
-    section('Manual Routines', hideable: true, hidden: false) {
-      input(name: 'manualUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+    section('Manual (Knob) Routines', hideable: true, hidden: false) {
       input(name: 'manualLockRoutineDay', title: 'On Lock Daytime', type: 'enum', options: actions, required: false, multiple: true)
-      
-      input(name: 'manualUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
       input(name: 'manualLockRoutineNight', title: 'On Lock Evening', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'manualUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'manualUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
     }
-    section('Code Routines', hideable: true, hidden: false) {
-      input(name: 'codeUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+    section('Keypad Routines', hideable: true, hidden: false) {
       input(name: 'codeLockRoutineDay', title: 'On Lock Daytime', type: 'enum', options: actions, required: false, multiple: true)
-      
-      input(name: 'codeUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
       input(name: 'codeLockRoutineNight', title: 'On Lock Evening', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
     }
     section('Restrictions', hideable: true, hidden: true) {
       paragraph 'These restrictions apply to all the above:'
@@ -373,7 +370,6 @@ def codeUsed(evt) {
     manualUse = true
   }
 
-  log.debug("action: ${action}, user: ${userApp}, evening: ${isEvening}, manual: ${manualUse}, keylock: ${data && data.usedCode == -1}")
   if (action == 'unlocked') {
     // door was unlocked
     if (userApp) {
@@ -421,10 +417,9 @@ def codeUsed(evt) {
     // door was locked
     if (userApp) {
       message = "${lock.label} was locked by ${userApp.userName}"
-      // user specific
-      if (userApp.userLockPhrase) {
-        userApp.executeHelloPresenceCheck(userApp.userLockPhrase)
-      }
+    }
+    if (data && data.usedCode == -1) {
+      message = "${lock.label} was locked by keypad"
       
       if (isEvening) {
         if (codeLockRoutineNight) {
@@ -435,12 +430,7 @@ def codeUsed(evt) {
           executeHelloPresenceCheck(codeLockRoutineDay)
         }
       }
-    }
-    if (data && data.usedCode == -1) {
-      message = "${lock.label} was locked by keypad"
-      if (keypadLockRoutine) {
-        executeHelloPresenceCheck(keypadLockRoutine)
-      }
+
       if (notifyKeypadLock) {
         send(message)
       }
