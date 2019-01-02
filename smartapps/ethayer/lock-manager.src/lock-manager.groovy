@@ -15,10 +15,7 @@ preferences {
   page name: 'mainPage', title: 'Installed', install: true, uninstall: true, submitOnChange: true
   page name: 'infoRefreshPage'
   page name: 'notificationPage'
-  page name: 'helloHomePage'
   page name: 'lockInfoPage'
-  page name: 'keypadPage'
-  page name: 'askAlexaPage'
 }
 
 def mainPage() {
@@ -110,7 +107,6 @@ def notificationPage() {
       paragraph 'These settings will apply to all users.  Settings on individual users will override these settings'
 
       input('recipients', 'contact', title: 'Send notifications to', submitOnChange: true, required: false, multiple: true)
-      href(name: 'toAskAlexaPage', title: 'Ask Alexa', page: 'askAlexaPage')
       if (!recipients) {
         input(name: 'phone', type: 'text', title: 'Text This Number', description: 'Phone number', required: false, submitOnChange: true)
         paragraph 'For multiple SMS recipients, separate phone numbers with a semicolon(;)'
@@ -127,56 +123,6 @@ def notificationPage() {
     section('Only During These Times (optional)') {
       input(name: 'notificationStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
       input(name: 'notificationEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
-    }
-  }
-}
-
-def helloHomePage() {
-  dynamicPage(name: 'helloHomePage', title: 'Global Hello Home Settings (optional)') {
-    def actions = location.helloHome?.getPhrases()*.label
-    actions?.sort()
-    section('Hello Home Phrases') {
-      input(name: 'manualUnlockRoutine', title: 'On Manual Unlock', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'manualLockRoutine', title: 'On Manual Lock', type: 'enum', options: actions, required: false, multiple: true)
-
-      input(name: 'codeUnlockRoutine', title: 'On Code Unlock After Sunset', type: 'enum', options: actions, required: false, multiple: true)
-
-      paragraph 'Supported on some locks:'
-      input(name: 'codeLockRoutine', title: 'On Code Lock', type: 'enum', options: actions, required: false, multiple: true)
-
-      paragraph 'These restrictions apply to all the above:'
-      input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
-      input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
-    }
-  }
-}
-
-def askAlexaPage() {
-  dynamicPage(name: 'askAlexaPage', title: 'Ask Alexa Message Settings') {
-    section('Que Messages with the Ask Alexa app') {
-      paragraph 'These settings apply to all users.  These settings are overridable on the user level'
-      input(name: 'alexaAccess', title: 'on User Entry', type: 'bool', required: false)
-      input(name: 'alexaLock', title: 'on Lock', type: 'bool', required: false)
-      input(name: 'alexaAccessStart', title: 'when granting access', type: 'bool', required: false)
-      input(name: 'alexaAccessEnd', title: 'when revoking access', type: 'bool', required: false)
-    }
-    section('Only During These Times (optional)') {
-      input(name: 'alexaStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
-      input(name: 'alexaEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
-    }
-  }
-}
-
-def keypadPage() {
-  dynamicPage(name: 'keypadPage',title: 'Keypad Settings (optional)', install: true, uninstall: true) {
-    def actions = location.helloHome?.getPhrases()*.label
-    actions?.sort()
-    section("Settings") {
-      paragraph 'settings here are for all users. When any user enters their passcode, run these routines'
-      input(name: 'armRoutine', title: 'Arm/Away routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'disarmRoutine', title: 'Disarm routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'stayRoutine', title: 'Arm/Stay routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'nightRoutine', title: 'Arm/Night routine', type: 'enum', options: actions, required: false, multiple: true)
     }
   }
 }
@@ -299,21 +245,6 @@ def availableSlots(selectedSlot) {
   return options
 }
 
-def keypadMatchingUser(usedCode){
-  def correctUser = false
-  def userApps = getUserApps()
-  userApps.each { userApp ->
-    def code
-    if (userApp.isActiveKeypad()) {
-      code = userApp.userCode.take(4)
-      if (code.toInteger() == usedCode.toInteger()) {
-        correctUser = userApp
-      }
-    }
-  }
-  return correctUser
-}
-
 def findAssignedChildApp(lock, slot) {
   def childApp
   def userApps = getUserApps()
@@ -334,17 +265,6 @@ def getUserApps() {
     }
   }
   return userApps
-}
-
-def getKeypadApps() {
-  def keypadApps = []
-  def children = getChildApps()
-  children.each { child ->
-    if (child.keypad) {
-      keypadApps.push(child)
-    }
-  }
-  return keypadApps
 }
 
 def getLockApps() {

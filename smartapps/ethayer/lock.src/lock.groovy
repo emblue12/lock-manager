@@ -21,7 +21,6 @@ preferences {
   page name: 'notificationPage'
   page name: 'helloHomePage'
   page name: 'infoRefreshPage'
-  page name: 'askAlexaPage'
 }
 
 def installed() {
@@ -128,7 +127,6 @@ def notificationPage() {
       }
       if (!muteLock) {
         input('recipients', 'contact', title: 'Send notifications to', submitOnChange: true, required: false, multiple: true)
-        href(name: 'toAskAlexaPage', title: 'Ask Alexa', page: 'askAlexaPage')
         if (!recipients) {
           input(name: 'phone', type: 'text', title: 'Text This Number', description: 'Phone number', required: false, submitOnChange: true)
           paragraph 'For multiple SMS recipients, separate phone numbers with a semicolon(;)'
@@ -152,36 +150,28 @@ def notificationPage() {
   }
 }
 
-def askAlexaPage() {
-  dynamicPage(name: 'askAlexaPage', title: 'Ask Alexa Message Settings') {
-    section('Que Messages with the Ask Alexa app') {
-      input(name: 'alexaManualLock', title: 'On Manual Turn (Lock)', type: 'bool', required: false)
-      input(name: 'alexaManualUnlock', title: 'On Manual Turn (Unlock)', type: 'bool', required: false)
-      if (state.supportsKeypadData) {
-        input(name: 'alexaKeypadLock', title: 'On Keypad Press to Lock', type: 'bool', required: false)
-      }
-    }
-    section('Only During These Times (optional)') {
-      input(name: 'alexaStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
-      input(name: 'alexaEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
-    }
-  }
-}
-
 def helloHomePage() {
   dynamicPage(name: 'helloHomePage', title: 'Hello Home Settings (optional)') {
     def actions = location.helloHome?.getPhrases()*.label
     actions?.sort()
-    section('Hello Home Phrases') {
-      input(name: 'manualUnlockRoutine', title: 'On Manual Unlock', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'manualLockRoutine', title: 'On Manual Lock', type: 'enum', options: actions, required: false, multiple: true)
-
-      input(name: 'codeUnlockRoutine', title: 'On Code Unlock After Sunset', type: 'enum', options: actions, required: false, multiple: true)
-
-      paragraph 'These restrictions apply to all the above:'
-      input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
-      input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
+    section('Manual Routines', hideable: true, hidden: false) {
+      input(name: 'manualUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'manualLockRoutineDay', title: 'On Lock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      
+      input(name: 'manualUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'manualLockRoutineNight', title: 'On Lock Evening', type: 'enum', options: actions, required: false, multiple: true)
     }
+    section('Code Routines', hideable: true, hidden: false) {
+      input(name: 'codeUnlockRoutineDay', title: 'On Unlock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeLockRoutineDay', title: 'On Lock Daytime', type: 'enum', options: actions, required: false, multiple: true)
+      
+      input(name: 'codeUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
+      input(name: 'codeLockRoutineNight', title: 'On Lock Evening', type: 'enum', options: actions, required: false, multiple: true)
+    }
+
+    paragraph 'These restrictions apply to all the above:'
+    input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
+    input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
   }
 }
 
@@ -368,6 +358,8 @@ def codeUsed(evt) {
   def data = false
   def sunriseSunset = getSunriseAndSunset()
   def now = rightNow()
+  def isEvening = now >= sunriseSunset.sunset && now <= (sunriseSunset.sunrise + 1)
+
   if (evt.data) {
     data = new JsonSlurper().parseText(evt.data)
     codeUsed = data.usedCode
@@ -395,32 +387,30 @@ def codeUsed(evt) {
       }
       
       // lock specific
-      if (now >= sunriseSunset.sunset && now <= (sunriseSunset.sunrise + 1)) {
-        if (codeUnlockRoutine) {
-          executeHelloPresenceCheck(codeUnlockRoutine)
+      if (isEvening) {
+        if (codeUnlockRoutineNight) {
+          executeHelloPresenceCheck(codeUnlockRoutineNight)
         }
-        // global
-        if (parent.codeUnlockRoutine) {
-          parent.executeHelloPresenceCheck(parent.codeUnlockRoutine)
+      } else {
+        if (codeUnlockRoutineDay) {
+          executeHelloPresenceCheck(codeUnlockRoutineDay)
         }
       }
     } else if (manualUse) {
       // unlocked manually
 
-      // lock specific
-      if (manualUnlockRoutine) {
-        executeHelloPresenceCheck(manualUnlockRoutine)
-      }
-      // global
-      if (parent.manualUnlockRoutine) {
-        parent.executeHelloPresenceCheck(parent.manualUnlockRoutine)
+      if (isEvening) {
+        if (manualUnlockRoutineNight) {
+          executeHelloPresenceCheck(manualUnlockRoutineNight)
+        }
+      } else {
+        if (manualUnlockRoutineDay) {
+          executeHelloPresenceCheck(manualUnlockRoutineDay)
+        }
       }
 
       message = "${lock.label} was unlocked manually"
       if (notifyManualUnlock) {
-        send(message)
-      }
-      if (alexaManualUnlock) {
         send(message)
       }
     }
@@ -433,13 +423,15 @@ def codeUsed(evt) {
       if (userApp.userLockPhrase) {
         userApp.executeHelloPresenceCheck(userApp.userLockPhrase)
       }
-      // lock specific
-      if (codeLockRoutine) {
-        executeHelloPresenceCheck(codeLockRoutine)
-      }
-      // gobal
-      if (parent.codeLockRoutine) {
-        parent.executeHelloPresenceCheck(parent.codeLockRoutine)
+      
+      if (isEvening) {
+        if (codeLockRoutineNight) {
+          executeHelloPresenceCheck(codeLockRoutineNight)
+        }
+      } else {
+        if (codeLockRoutineDay) {
+          executeHelloPresenceCheck(codeLockRoutineDay)
+        }
       }
     }
     if (data && data.usedCode == -1) {
@@ -450,28 +442,23 @@ def codeUsed(evt) {
       if (notifyKeypadLock) {
         send(message)
       }
-      if (alexaKeypadLock) {
-        askAlexa(message)
-      }
     }
     if (manualUse) {
       // locked manually
       message = "${lock.label} was locked manually"
 
-      // lock specific
-      if (manualLockRoutine) {
-        executeHelloPresenceCheck(manualLockRoutine)
-      }
-      // global
-      if (parent.manualLockRoutine) {
-        parent.executeHelloPresenceCheck(parent.manualLockRoutine)
+      if (isEvening) {
+        if (manualLockRoutineNight) {
+          executeHelloPresenceCheck(manualLockRoutineNight)
+        }
+      } else {
+        if (manualLockRoutineDay) {
+          executeHelloPresenceCheck(manualLockRoutineDay)
+        }
       }
 
       if (notifyManualLock) {
         send(message)
-      }
-      if (alexaManualLock) {
-        askAlexa(message)
       }
     }
   }
@@ -483,15 +470,9 @@ def codeUsed(evt) {
       if (userApp.notifyAccess || parent.notifyAccess) {
         userApp.send(message)
       }
-      if (userApp.alexaAccess || parent.alexaAccess) {
-        userApp.sendAskAlexa(message)
-      }
     } else if (action == 'locked') {
       if (userApp.notifyLock || parent.notifyLock) {
         userApp.send(message)
-      }
-      if (userApp.alexaLock || parent.alexaLock) {
-        userApp.sendAskAlexa(message)
       }
     }
   }
@@ -665,28 +646,6 @@ def sendMessage(message) {
   } else {
     sendNotificationEvent(message)
   }
-}
-
-def askAlexa(message) {
-  if (!muteLock) {
-    if (alexaStartTime != null && alexaEndTime != null) {
-      def start = timeToday(alexaStartTime)
-      def stop = timeToday(alexaEndTime)
-      def now = new Date()
-      if (start.before(now) && stop.after(now)){
-        sendAskAlexa(message)
-      }
-    } else {
-      sendAskAlexa(message)
-    }
-  }
-}
-def sendAskAlexa(message) {
-  sendLocationEvent(name: 'AskAlexaMsgQueue',
-                    value: 'LockManager/Lock',
-                    isStateChange: true,
-                    descriptionText: message,
-                    unit: "Lock//${lock.label}")
 }
 
 def isCodeComplete() {

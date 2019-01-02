@@ -23,8 +23,6 @@ preferences {
   page name: 'notificationPage'
   page name: 'reEnableUserLockPage'
   page name: 'lockResetPage'
-  page name: 'keypadPage'
-  page name: 'askAlexaPage'
 }
 
 def installed() {
@@ -174,7 +172,6 @@ def mainPage() {
       input(name: 'burnAfterInt', title: 'How many uses before burn?', type: 'number', required: false, description: 'Blank or zero is infinite')
       href(name: 'toSchedulingPage', page: 'schedulingPage', title: 'Schedule (optional)', description: schedulingHrefDescription(), state: schedulingHrefDescription() ? 'complete' : '')
       href(name: 'toNotificationPage', page: 'notificationPage', title: 'Notification Settings', description: notificationPageDescription(), state: notificationPageDescription() ? 'complete' : '')
-      href(name: 'toKeypadPage', page: 'keypadPage', title: 'Keypad Routines (optional)')
     }
     section('Locks') {
       initializeLockData()
@@ -249,20 +246,6 @@ def lockPage(params) {
       }
       input(name: "lockDisabled${lock.id}", type: 'bool', title: 'Disable lock for this user?', required: false, defaultValue: settings."lockDisabled${lock.id}", refreshAfterSelection: true)
       href(name: 'toLockResetPage', page: 'lockResetPage', title: 'Reset Lock', description: 'Reset lock data for this user.',  params: [id: lock.id])
-    }
-  }
-}
-
-def keypadPage() {
-  dynamicPage(name: 'keypadPage',title: 'Keypad Settings (optional)', install: true, uninstall: true) {
-    def actions = location.helloHome?.getPhrases()*.label
-    actions?.sort()
-    section("Settings") {
-      paragraph 'settings here are for this user only. When this user enters their passcode, run these routines'
-      input(name: 'armRoutine', title: 'Arm/Away routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'disarmRoutine', title: 'Disarm routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'stayRoutine', title: 'Arm/Stay routine', type: 'enum', options: actions, required: false, multiple: true)
-      input(name: 'nightRoutine', title: 'Arm/Night routine', type: 'enum', options: actions, required: false, multiple: true)
     }
   }
 }
@@ -369,7 +352,6 @@ def notificationPage() {
       }
       if (!muteUser) {
         input('recipients', 'contact', title: 'Send notifications to', submitOnChange: true, required: false, multiple: true)
-        href(name: 'toAskAlexaPage', title: 'Ask Alexa', page: 'askAlexaPage')
         if (!recipients) {
           input(name: 'phone', type: 'text', title: 'Text This Number', description: 'Phone number', required: false, submitOnChange: true)
           paragraph 'For multiple SMS recipients, separate phone numbers with a semicolon(;)'
@@ -388,21 +370,6 @@ def notificationPage() {
         input(name: 'notificationStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
         input(name: 'notificationEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
       }
-    }
-  }
-}
-
-def askAlexaPage() {
-  dynamicPage(name: 'askAlexaPage', title: 'Ask Alexa Message Settings') {
-    section('Que Messages with the Ask Alexa app') {
-      input(name: 'alexaAccess', title: 'on User Entry', type: 'bool', required: false)
-      input(name: 'alexaLock', title: 'on Lock', type: 'bool', required: false)
-      input(name: 'alexaAccessStart', title: 'when granting access', type: 'bool', required: false)
-      input(name: 'alexaAccessEnd', title: 'when revoking access', type: 'bool', required: false)
-    }
-    section('Only During These Times (optional)') {
-      input(name: 'alexaStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
-      input(name: 'alexaEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
     }
   }
 }
@@ -912,61 +879,6 @@ def getLockUserInfo(lock) {
     para += "\n ${reason}"
   }
   para
-}
-
-// User Ask Alexa
-
-def userAlexaSettings() {
-  if (alexaAccess || alexaLock || alexaAccessStart || alexaAccessEnd || alexaStartTime || alexaEndTime) {
-    // user has it's own settings!
-    return true
-  }
-  // user doesn't !
-  return false
-}
-
-def askAlexa(msg) {
-  if (userAlexaSettings()) {
-    checkIfAlexaUser(msg)
-  } else {
-    checkIfAlexaGlobal(msg)
-  }
-}
-
-def checkIfAlexaUser(message) {
-  if (!muteUser) {
-    if (alexaStartTime != null && alexaEndTime != null) {
-      def start = timeToday(alexaStartTime)
-      def stop = timeToday(alexaEndTime)
-      def now = new Date()
-      if (start.before(now) && stop.after(now)){
-        sendAskAlexa(message)
-      }
-    } else {
-      sendAskAlexa(message)
-    }
-  }
-}
-
-def checkIfAlexaGlobal(message) {
-  if (parent.alexaStartTime != null && parent.alexaEndTime != null) {
-    def start = timeToday(parent.alexaStartTime)
-    def stop = timeToday(parent.alexaEndTime)
-    def now = new Date()
-    if (start.before(now) && stop.after(now)){
-      sendAskAlexa(message)
-    }
-  } else {
-    sendAskAlexa(message)
-  }
-}
-
-def sendAskAlexa(message) {
-  sendLocationEvent(name: 'AskAlexaMsgQueue',
-                    value: 'LockManager/User',
-                    isStateChange: true,
-                    descriptionText: message,
-                    unit: "User//${userName}")
 }
 
 private anyoneHome(sensors) {
