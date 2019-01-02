@@ -120,6 +120,7 @@ def notificationPage() {
         input(name: 'notifyAccessEnd', title: 'when revoking access', type: 'bool', required: false)
       }
     }
+    
     section('Only During These Times (optional)') {
       input(name: 'notificationStartTime', type: 'time', title: 'Notify Starting At This Time', description: null, required: false)
       input(name: 'notificationEndTime', type: 'time', title: 'Notify Ending At This Time', description: null, required: false)
