@@ -168,10 +168,11 @@ def helloHomePage() {
       input(name: 'codeUnlockRoutineNight', title: 'On Unlock Evening', type: 'enum', options: actions, required: false, multiple: true)
       input(name: 'codeLockRoutineNight', title: 'On Lock Evening', type: 'enum', options: actions, required: false, multiple: true)
     }
-
-    paragraph 'These restrictions apply to all the above:'
-    input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
-    input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
+    section('Restrictions', hideable: true, hidden: true) {
+      paragraph 'These restrictions apply to all the above:'
+      input "userNoRunPresence", "capability.presenceSensor", title: "DO NOT run Actions if any of these are present:", multiple: true, required: false
+      input "userDoRunPresence", "capability.presenceSensor", title: "ONLY run Actions if any of these are present:", multiple: true, required: false
+    }
   }
 }
 
