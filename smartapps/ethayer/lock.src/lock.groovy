@@ -369,6 +369,9 @@ def codeUsed(evt) {
   if (!data || data?.usedCode == 'manual') {
     manualUse = true
   }
+  
+  log.debug("data: ${data}")
+  log.debug("manual: ${manualUse}, userApp: ${userApp}")
 
   if (action == 'unlocked') {
     // door was unlocked
